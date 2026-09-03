@@ -26,8 +26,7 @@ from ..canonical import pair_group_ids
 from ..records import PredictionRecords
 from ..result import SplitResult
 from ..spec import Regime, SplitSpec
-from .assignment import assign_groups
-from .base import Splitter, empty_split_warnings, ensure_compatible, resolve_strata
+from .base import Splitter, ensure_compatible, split_by_groups
 
 
 class RandomSplitter(Splitter):
@@ -35,24 +34,12 @@ class RandomSplitter(Splitter):
 
     def split(self, records: PredictionRecords, spec: SplitSpec) -> SplitResult:
         ensure_compatible(records, spec)
-        n = records.n_records
-        warnings: list[str] = []
-
         if spec.undirected_pairs:
             group_ids, unique_pairs = pair_group_ids(
                 records.source_codes, records.destination_codes, undirected=True
             )
             n_groups = int(unique_pairs.shape[0])
         else:
-            group_ids = np.arange(n, dtype=np.int64)
-            n_groups = n
-
-        strata, strata_warnings = resolve_strata(records, spec, group_ids, n_groups)
-        warnings.extend(strata_warnings)
-
-        sizes = np.bincount(group_ids, minlength=n_groups).astype(np.int64)
-        group_split = assign_groups(sizes, spec.ratios, spec.seed, strata=strata)
-        record_split = group_split[group_ids] if n_groups else np.empty(0, dtype=np.int64)
-
-        warnings.extend(empty_split_warnings(record_split, spec.split_names))
-        return SplitResult(spec=spec, records=records, record_split=record_split, warnings=warnings)
+            n_groups = records.n_records
+            group_ids = np.arange(n_groups, dtype=np.int64)
+        return split_by_groups(records, spec, group_ids, n_groups)

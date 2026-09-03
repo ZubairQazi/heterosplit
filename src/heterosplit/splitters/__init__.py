@@ -5,12 +5,14 @@ from __future__ import annotations
 from ..errors import HeteroSplitError
 from ..spec import Regime
 from .base import Splitter
+from .pair import PairDisjointSplitter
 from .random import RandomSplitter
 
 __all__ = ["Splitter", "get_splitter", "supported_regimes"]
 
 _SPLITTERS: dict[Regime, type[Splitter]] = {
     RandomSplitter.regime: RandomSplitter,
+    PairDisjointSplitter.regime: PairDisjointSplitter,
 }
 
 

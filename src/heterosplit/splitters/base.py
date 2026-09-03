@@ -11,8 +11,15 @@ import numpy.typing as npt
 from ..records import PredictionRecords
 from ..result import SplitResult
 from ..spec import Regime, SplitSpec
+from .assignment import assign_groups
 
-__all__ = ["Splitter", "empty_split_warnings", "ensure_compatible", "resolve_strata"]
+__all__ = [
+    "Splitter",
+    "empty_split_warnings",
+    "ensure_compatible",
+    "resolve_strata",
+    "split_by_groups",
+]
 
 IntArray = npt.NDArray[np.int64]
 
@@ -92,3 +99,29 @@ def empty_split_warnings(record_split: IntArray, split_names: tuple[str, ...]) -
         if not np.any(record_split == i):
             warnings.append(f"split {name!r} received 0 records")
     return warnings
+
+
+def split_by_groups(
+    records: PredictionRecords,
+    spec: SplitSpec,
+    group_ids: IntArray,
+    n_groups: int,
+    *,
+    extra_warnings: list[str] | None = None,
+) -> SplitResult:
+    """Assign atomic groups to splits and expand back to a per-record result.
+
+    This is the shared tail of every record-partition regime: resolve strata, size the
+    groups, run the seeded assignment, map the group assignment back onto records, and
+    collect warnings. ``group_ids`` must be dense (``0..n_groups-1``).
+    """
+    warnings: list[str] = list(extra_warnings or [])
+    strata, strata_warnings = resolve_strata(records, spec, group_ids, n_groups)
+    warnings.extend(strata_warnings)
+
+    sizes = np.bincount(group_ids, minlength=n_groups).astype(np.int64)
+    group_split = assign_groups(sizes, spec.ratios, spec.seed, strata=strata)
+    record_split = group_split[group_ids] if n_groups else np.empty(0, dtype=np.int64)
+
+    warnings.extend(empty_split_warnings(record_split, spec.split_names))
+    return SplitResult(spec=spec, records=records, record_split=record_split, warnings=warnings)
