@@ -49,9 +49,52 @@ This project uses [`uv`](https://docs.astral.sh/uv/):
 ```bash
 git clone https://github.com/zubairqazi/heterosplit
 cd heterosplit
-uv sync            # creates .venv and installs the dev toolchain
-uv run pytest      # run the test suite
+uv sync                 # creates .venv and installs the dev toolchain
+uv run pytest           # run the test suite
+uv run --extra pyg pytest   # include the PyG adapter tests
 ```
+
+## Quickstart
+
+```python
+from heterosplit import make_synthetic_dataset, split_records
+
+# A DrugComb-shaped dataset: (drug, drug, cell-line) synergy observations.
+# Swap in your own PredictionRecords / HeteroData for real data.
+data = make_synthetic_dataset(
+    n_records=5000, n_source_entities=120, n_context_entities=30,
+    n_labels=2, source_type="drug", context_type="cell_line",
+    relation="synergy", seed=42,
+)
+
+# Joint cold-start: a test triple must involve an unseen drug AND an unseen cell line.
+spec = data.spec(
+    "joint_cold_start",
+    holdout={"drug": "either", "cell_line": "all"},
+    ratios=(0.8, 0.1, 0.1),
+    stratify_by="label",
+    seed=42,
+)
+
+result = split_records(data.records, spec)
+result.audit.raise_for_leakage()            # fails loudly on any leakage
+result.manifest.save("split-manifest.json") # deterministic, reloadable
+
+train_edges = result.message_passing_edge_index()   # leakage-safe training graph
+```
+
+Runnable versions live in [`examples/`](examples/) (`quickstart.py`,
+`recommendation.py`, `corrupted_leakage.py`), or try the CLI:
+
+```bash
+uv run heterosplit demo --regime joint_cold_start
+uv run heterosplit split --input data.csv --spec spec.json --out-dir out/
+```
+
+## Documentation
+
+- [Architecture / design](docs/architecture.md)
+- [Benchmarks & methodology](docs/benchmarks.md)
 
 ## Split taxonomy (v1 target)
 
@@ -65,6 +108,20 @@ uv run pytest      # run the test suite
 | Both-entity cold-start | Both endpoints of every test edge are unseen. |
 | Context cold-start | Test context entities never occur in training. |
 | Joint cold-start | A configured combination of endpoint and context disjointness. |
+
+## Leakage audit & manifests
+
+Every split ships with an **audit** and a reproducible **manifest**:
+
+- `result.audit` turns the regime's contract into machine-checkable findings — entity /
+  pair / context overlap (across *all* splits, including val-vs-test), reversed unordered
+  pairs, message-passing leakage, duplicate observations, and optional negative-sample /
+  feature-provenance checks. Each finding has a count, severity, and concrete offending
+  ids; `raise_for_leakage()` fails on any violation.
+- `result.manifest` records library/schema versions, a collision-resistant input
+  fingerprint, the normalized spec, per-split counts, and hashes of the split indices.
+  `manifest.digest()` is a stable reproducibility key; runtime/memory measurements are
+  kept separate so a fixed input + spec + seed always produce the same digest.
 
 ## License
 

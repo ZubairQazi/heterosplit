@@ -13,7 +13,7 @@ from __future__ import annotations
 
 # Defined before the sub-module imports below: manifest.py reads it via
 # ``from . import __version__`` during package initialization.
-__version__ = "0.0.1.dev0"
+__version__ = "0.1.0"
 
 from .api import split_records
 from .audit import AuditFinding, AuditReport, Severity, audit_split
