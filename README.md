@@ -8,7 +8,7 @@ interaction, recommendation, knowledge graphs). It is designed to **complement**
 PyTorch Geometric — it focuses narrowly on split *semantics* and leakage *auditing*,
 and does not replace PyG's loaders, samplers, or training stack.
 
-> **Status:** early development (`0.0.x`). APIs may change. This is positioned as a
+> **Status:** early release (`0.1.x`). APIs may change. This is positioned as a
 > reusable implementation of entity-disjoint split policies and leakage audits for
 > PyG `HeteroData` link-prediction tasks — not (yet) a research novelty claim.
 
@@ -104,8 +104,8 @@ directly (CC-BY-4.0):
 ```python
 from heterosplit.datasets.drugcomb import download_drugcomb_summary, load_drugcomb_csv
 
-download_drugcomb_summary("drugcomb.csv")           # ~1.4 GB, once
-records = load_drugcomb_csv("drugcomb.csv", max_rows=200_000)   # streams; filters mono-therapy rows
+download_drugcomb_summary("drugcomb.csv")  # ~1.4 GB, once
+records = load_drugcomb_csv("drugcomb.csv", max_rows=200_000)  # streams; filters mono-therapy rows
 ```
 
 `records_from_drugcomb(frame, ...)` maps an in-memory DrugComb frame (dict or DataFrame)
