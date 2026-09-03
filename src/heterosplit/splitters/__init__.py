@@ -5,6 +5,7 @@ from __future__ import annotations
 from ..errors import HeteroSplitError
 from ..spec import Regime
 from .base import Splitter
+from .context_disjoint import ContextColdStartSplitter
 from .entity_disjoint import (
     BothColdStartSplitter,
     DestinationColdStartSplitter,
@@ -23,6 +24,7 @@ _SPLITTERS: dict[Regime, type[Splitter]] = {
     DestinationColdStartSplitter.regime: DestinationColdStartSplitter,
     EitherColdStartSplitter.regime: EitherColdStartSplitter,
     BothColdStartSplitter.regime: BothColdStartSplitter,
+    ContextColdStartSplitter.regime: ContextColdStartSplitter,
 }
 
 

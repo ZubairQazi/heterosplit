@@ -100,6 +100,7 @@ class SplitSpec:
         self._validate_seed()
         self._validate_undirected()
         self._validate_stratify()
+        self._validate_regime_roles()
         self._validate_holdout()
 
     # -- validation ----------------------------------------------------------
@@ -140,6 +141,13 @@ class SplitSpec:
         if self.stratify_by not in self.roles:
             raise SpecError(
                 f"stratify_by must be None, 'label', or a role name; got {self.stratify_by!r}"
+            )
+
+    def _validate_regime_roles(self) -> None:
+        if Regime.coerce(self.regime) is Regime.CONTEXT and len(self.schema.context_names) != 1:
+            raise SpecError(
+                "context_cold_start requires exactly one context role, got "
+                f"{len(self.schema.context_names)}; use joint_cold_start for multiple contexts"
             )
 
     def _validate_holdout(self) -> None:
