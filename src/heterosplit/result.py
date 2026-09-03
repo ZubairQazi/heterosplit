@@ -18,6 +18,7 @@ from .records import PredictionRecords
 from .spec import SplitSpec
 
 if TYPE_CHECKING:
+    from .audit import AuditReport
     from .manifest import Manifest
 
 __all__ = ["EXCLUDED", "SplitResult"]
@@ -46,6 +47,7 @@ class SplitResult:
     records: PredictionRecords
     record_split: IntArray
     warnings: list[str] = field(default_factory=list)
+    _audit: AuditReport | None = field(default=None, init=False, repr=False, compare=False)
 
     @property
     def split_names(self) -> tuple[str, ...]:
@@ -117,6 +119,18 @@ class SplitResult:
         from .message_passing import message_passing_edge_index
 
         return message_passing_edge_index(self, **kwargs)
+
+    @property
+    def audit(self) -> AuditReport:
+        """The leakage :class:`~heterosplit.audit.AuditReport` for this split (cached).
+
+        Call ``result.audit.raise_for_leakage()`` to fail on any contract violation.
+        """
+        if self._audit is None:
+            from .audit import audit_split
+
+            self._audit = audit_split(self)
+        return self._audit
 
     @property
     def manifest(self) -> Manifest:

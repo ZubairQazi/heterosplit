@@ -16,6 +16,7 @@ from __future__ import annotations
 __version__ = "0.0.1.dev0"
 
 from .api import split_records
+from .audit import AuditFinding, AuditReport, Severity, audit_split
 from .errors import (
     HeteroSplitError,
     InfeasibleSplitError,
@@ -31,6 +32,8 @@ from .spec import Regime, SplitSpec
 from .synthetic import SyntheticDataset, make_synthetic_dataset
 
 __all__ = [
+    "AuditFinding",
+    "AuditReport",
     "EdgeType",
     "EntityRole",
     "HeteroSplitError",
@@ -42,12 +45,14 @@ __all__ = [
     "RelationMeta",
     "RoleKind",
     "SchemaError",
+    "Severity",
     "SpecError",
     "SplitResult",
     "SplitSpec",
     "SyntheticDataset",
     "TaskSchema",
     "__version__",
+    "audit_split",
     "make_synthetic_dataset",
     "split_records",
 ]

@@ -126,6 +126,9 @@ class Manifest:
         index_hashes = {split: _hash_indices(result.indices(split)) for split in spec.split_names}
         index_hashes["excluded"] = _hash_indices(result.excluded_indices)
 
+        if audit is None:
+            audit = result.audit.to_dict()
+
         return cls(
             manifest_version=MANIFEST_VERSION,
             heterosplit_version=__version__,
