@@ -18,7 +18,9 @@ from .errors import (
     SchemaError,
     SpecError,
 )
+from .records import PredictionRecords
 from .schema import EdgeType, EntityRole, RelationMeta, RoleKind, TaskSchema
+from .spec import Regime, SplitSpec
 
 __version__ = "0.0.1.dev0"
 
@@ -28,10 +30,13 @@ __all__ = [
     "HeteroSplitError",
     "InfeasibleSplitError",
     "LeakageError",
+    "PredictionRecords",
+    "Regime",
     "RelationMeta",
     "RoleKind",
     "SchemaError",
     "SpecError",
+    "SplitSpec",
     "TaskSchema",
     "__version__",
 ]
