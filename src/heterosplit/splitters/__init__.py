@@ -5,6 +5,12 @@ from __future__ import annotations
 from ..errors import HeteroSplitError
 from ..spec import Regime
 from .base import Splitter
+from .entity_disjoint import (
+    BothColdStartSplitter,
+    DestinationColdStartSplitter,
+    EitherColdStartSplitter,
+    SourceColdStartSplitter,
+)
 from .pair import PairDisjointSplitter
 from .random import RandomSplitter
 
@@ -13,6 +19,10 @@ __all__ = ["Splitter", "get_splitter", "supported_regimes"]
 _SPLITTERS: dict[Regime, type[Splitter]] = {
     RandomSplitter.regime: RandomSplitter,
     PairDisjointSplitter.regime: PairDisjointSplitter,
+    SourceColdStartSplitter.regime: SourceColdStartSplitter,
+    DestinationColdStartSplitter.regime: DestinationColdStartSplitter,
+    EitherColdStartSplitter.regime: EitherColdStartSplitter,
+    BothColdStartSplitter.regime: BothColdStartSplitter,
 }
 
 

@@ -120,10 +120,18 @@ class SplitSpec:
             raise SpecError(f"seed must be a non-negative int, got {self.seed!r}")
 
     def _validate_undirected(self) -> None:
-        if self.undirected_pairs and not self.schema.is_self_relation:
+        if not self.undirected_pairs:
+            return
+        if not self.schema.is_self_relation:
             raise SpecError(
                 "undirected_pairs=True is only valid for a self-relation "
                 f"(source type == destination type); got {self.supervision_edge!r}"
+            )
+        regime = Regime.coerce(self.regime)
+        if regime in (Regime.SOURCE, Regime.DESTINATION):
+            raise SpecError(
+                f"undirected_pairs=True is incompatible with regime {regime.value!r}: "
+                "source/destination roles have no stable orientation for unordered pairs"
             )
 
     def _validate_stratify(self) -> None:
