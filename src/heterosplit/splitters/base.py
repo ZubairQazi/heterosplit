@@ -29,9 +29,12 @@ IntArray = npt.NDArray[np.int64]
 #: more than this (entity-disjoint / joint ratios are inherently approximate).
 _RATIO_DEVIATION_WARN = 0.15
 
-#: Skip the (super-linear) local-search refinement above this many groups so large
-#: benchmark runs stay fast; the greedy assignment alone is already well-balanced.
-REFINE_MAX_GROUPS = 100_000
+#: Skip the local-search refinement above this many groups. Profiling showed its
+#: Python-level sweep dominates runtime for large group counts (e.g. record-level random
+#: on 100k+ records), while its balance benefit there is negligible — the greedy
+#: assignment alone already lands within ~1e-3 label divergence at that scale. Below the
+#: cap (typical curated cold-start datasets) refinement is sub-second and worthwhile.
+REFINE_MAX_GROUPS = 5_000
 
 
 class Splitter(ABC):
