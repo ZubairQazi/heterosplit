@@ -41,6 +41,7 @@ heterosplit/
   manifest.py      deterministic, reloadable split manifest
   report/          JSON + Markdown distribution/audit report
   adapters/        tabular + PyG HeteroData (optional [pyg] extra)
+  datasets/        narrow real-dataset adapters (DrugComb)
   cli.py           `heterosplit demo` / `heterosplit split`
 ```
 

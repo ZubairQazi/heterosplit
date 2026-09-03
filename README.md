@@ -62,9 +62,14 @@ from heterosplit import make_synthetic_dataset, split_records
 # A DrugComb-shaped dataset: (drug, drug, cell-line) synergy observations.
 # Swap in your own PredictionRecords / HeteroData for real data.
 data = make_synthetic_dataset(
-    n_records=5000, n_source_entities=120, n_context_entities=30,
-    n_labels=2, source_type="drug", context_type="cell_line",
-    relation="synergy", seed=42,
+    n_records=5000,
+    n_source_entities=120,
+    n_context_entities=30,
+    n_labels=2,
+    source_type="drug",
+    context_type="cell_line",
+    relation="synergy",
+    seed=42,
 )
 
 # Joint cold-start: a test triple must involve an unseen drug AND an unseen cell line.
@@ -77,19 +82,34 @@ spec = data.spec(
 )
 
 result = split_records(data.records, spec)
-result.audit.raise_for_leakage()            # fails loudly on any leakage
-result.manifest.save("split-manifest.json") # deterministic, reloadable
+result.audit.raise_for_leakage()  # fails loudly on any leakage
+result.manifest.save("split-manifest.json")  # deterministic, reloadable
 
-train_edges = result.message_passing_edge_index()   # leakage-safe training graph
+train_edges = result.message_passing_edge_index()  # leakage-safe training graph
 ```
 
 Runnable versions live in [`examples/`](examples/) (`quickstart.py`,
-`recommendation.py`, `corrupted_leakage.py`), or try the CLI:
+`recommendation.py`, `drugcomb.py`, `corrupted_leakage.py`), or try the CLI:
 
 ```bash
 uv run heterosplit demo --regime joint_cold_start
 uv run heterosplit split --input data.csv --spec spec.json --out-dir out/
 ```
+
+### Real data: DrugComb
+
+The [DrugComb](https://drugcomb.org) drug–drug–cell-line synergy corpus is wired up
+directly (CC-BY-4.0):
+
+```python
+from heterosplit.datasets.drugcomb import download_drugcomb_summary, load_drugcomb_csv
+
+download_drugcomb_summary("drugcomb.csv")           # ~1.4 GB, once
+records = load_drugcomb_csv("drugcomb.csv", max_rows=200_000)   # streams; filters mono-therapy rows
+```
+
+`records_from_drugcomb(frame, ...)` maps an in-memory DrugComb frame (dict or DataFrame)
+if you already have one.
 
 ## Documentation
 
