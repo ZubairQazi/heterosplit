@@ -10,6 +10,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: lint & type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync (core + dev toolchain)
+        run: uv sync --python 3.12
+
+      - name: Lint (ruff)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Type check (mypy)
+        run: uv run mypy
+
   test:
     name: test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -30,14 +55,6 @@ jobs:
 
       - name: Sync (core + dev toolchain)
         run: uv sync --python ${{ matrix.python-version }}
-
-      - name: Lint (ruff)
-        run: |
-          uv run ruff check .
-          uv run ruff format --check .
-
-      - name: Type check (mypy)
-        run: uv run mypy
 
       - name: Test
         run: uv run pytest --cov --cov-report=term-missing --cov-report=xml

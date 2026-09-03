@@ -74,7 +74,9 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF", "PERF", "PIE"]
 "tests/*" = ["N802", "N803", "N806"]
 
 [tool.mypy]
-python_version = "3.10"
+# Type-check against 3.12 semantics: numpy 2.x ships PEP 695 stubs that mypy only
+# parses under >=3.12. Runtime support for 3.10+ is validated by the pytest matrix.
+python_version = "3.12"
 files = ["src"]
 strict = true
 warn_unused_configs = true
