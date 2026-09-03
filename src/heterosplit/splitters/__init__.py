@@ -12,6 +12,7 @@ from .entity_disjoint import (
     EitherColdStartSplitter,
     SourceColdStartSplitter,
 )
+from .joint import JointColdStartSplitter
 from .pair import PairDisjointSplitter
 from .random import RandomSplitter
 
@@ -25,6 +26,7 @@ _SPLITTERS: dict[Regime, type[Splitter]] = {
     EitherColdStartSplitter.regime: EitherColdStartSplitter,
     BothColdStartSplitter.regime: BothColdStartSplitter,
     ContextColdStartSplitter.regime: ContextColdStartSplitter,
+    JointColdStartSplitter.regime: JointColdStartSplitter,
 }
 
 

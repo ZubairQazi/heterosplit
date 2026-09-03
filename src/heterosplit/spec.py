@@ -179,6 +179,13 @@ class SplitSpec:
                     f"holdout mode {mode!r} is not valid for entity type {entity_type!r}; "
                     f"allowed: {sorted(allowed)}"
                 )
+            if mode in ("either", "both") and not (
+                self.schema.is_self_relation and entity_type == self.schema.source_type
+            ):
+                raise SpecError(
+                    f"holdout mode {mode!r} for {entity_type!r} requires a self-relation "
+                    "endpoint type (both endpoints drawn from that type)"
+                )
         active = {t: m for t, m in self.holdout.items() if m != "none"}
         if not active:
             raise SpecError("joint_cold_start holdout must hold out at least one entity type")

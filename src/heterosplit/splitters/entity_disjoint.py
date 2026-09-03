@@ -35,11 +35,16 @@ from ..records import PredictionRecords
 from ..result import EXCLUDED, SplitResult
 from ..spec import Regime, SplitSpec
 from .assignment import assign_groups
-from .base import Splitter, empty_split_warnings, ensure_compatible, split_by_groups
+from .base import (
+    Splitter,
+    degree,
+    empty_split_warnings,
+    ensure_compatible,
+    ratio_deviation_warnings,
+    split_by_groups,
+)
 
 IntArray = npt.NDArray[np.int64]
-
-_RATIO_DEVIATION_WARN = 0.15
 
 
 class SourceColdStartSplitter(Splitter):
@@ -68,7 +73,7 @@ class EitherColdStartSplitter(Splitter):
         src_label, dst_label, warnings = _endpoint_labels(records, spec)
         record_split = np.maximum(src_label, dst_label)
         warnings.extend(empty_split_warnings(record_split, spec.split_names))
-        warnings.extend(_ratio_warnings(record_split, spec))
+        warnings.extend(ratio_deviation_warnings(record_split, spec))
         return SplitResult(spec=spec, records=records, record_split=record_split, warnings=warnings)
 
 
@@ -85,18 +90,11 @@ class BothColdStartSplitter(Splitter):
                 f"{n_excluded} bridge record(s) excluded (endpoints fell in different splits)"
             )
         warnings.extend(empty_split_warnings(record_split, spec.split_names))
-        warnings.extend(_ratio_warnings(record_split, spec))
+        warnings.extend(ratio_deviation_warnings(record_split, spec))
         return SplitResult(spec=spec, records=records, record_split=record_split, warnings=warnings)
 
 
 # -- helpers -----------------------------------------------------------------
-
-
-def _degree(n_entities: int, *code_arrays: IntArray) -> IntArray:
-    degree = np.zeros(n_entities, dtype=np.int64)
-    for codes in code_arrays:
-        degree += np.bincount(codes, minlength=n_entities).astype(np.int64)
-    return degree
 
 
 def _endpoint_labels(
@@ -119,30 +117,12 @@ def _endpoint_labels(
 
     if schema.is_self_relation:
         n = records.n_entities(schema.source_type)
-        labels = assign_groups(_degree(n, src_codes, dst_codes), spec.ratios, spec.seed)
+        labels = assign_groups(degree(n, src_codes, dst_codes), spec.ratios, spec.seed)
         return labels[src_codes], labels[dst_codes], warnings
 
     seed_s, seed_d = (int(s) for s in np.random.SeedSequence(spec.seed).generate_state(2))
     n_s = records.n_entities(schema.source_type)
     n_d = records.n_entities(schema.destination_type)
-    labels_s = assign_groups(_degree(n_s, src_codes), spec.ratios, seed_s)
-    labels_d = assign_groups(_degree(n_d, dst_codes), spec.ratios, seed_d)
+    labels_s = assign_groups(degree(n_s, src_codes), spec.ratios, seed_s)
+    labels_d = assign_groups(degree(n_d, dst_codes), spec.ratios, seed_d)
     return labels_s[src_codes], labels_d[dst_codes], warnings
-
-
-def _ratio_warnings(record_split: IntArray, spec: SplitSpec) -> list[str]:
-    counts = np.array(
-        [np.count_nonzero(record_split == i) for i in range(len(spec.ratios))], dtype=np.float64
-    )
-    total = counts.sum()
-    if total == 0:
-        return []
-    warnings: list[str] = []
-    for i, name in enumerate(spec.split_names):
-        achieved = counts[i] / total
-        if abs(achieved - spec.ratios[i]) > _RATIO_DEVIATION_WARN:
-            warnings.append(
-                f"split {name!r} record ratio {achieved:.2f} deviates from requested "
-                f"{spec.ratios[i]:.2f} (inherent to entity-disjoint splitting)"
-            )
-    return warnings

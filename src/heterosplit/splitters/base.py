@@ -15,13 +15,19 @@ from .assignment import assign_groups, refine_assignment
 
 __all__ = [
     "Splitter",
+    "degree",
     "empty_split_warnings",
     "ensure_compatible",
+    "ratio_deviation_warnings",
     "resolve_strata",
     "split_by_groups",
 ]
 
 IntArray = npt.NDArray[np.int64]
+
+#: Report a warning when a split's achieved record ratio deviates from the request by
+#: more than this (entity-disjoint / joint ratios are inherently approximate).
+_RATIO_DEVIATION_WARN = 0.15
 
 #: Skip the (super-linear) local-search refinement above this many groups so large
 #: benchmark runs stay fast; the greedy assignment alone is already well-balanced.
@@ -102,6 +108,37 @@ def empty_split_warnings(record_split: IntArray, split_names: tuple[str, ...]) -
     for i, name in enumerate(split_names):
         if not np.any(record_split == i):
             warnings.append(f"split {name!r} received 0 records")
+    return warnings
+
+
+def degree(n_entities: int, *code_arrays: IntArray) -> IntArray:
+    """Incident-record count per entity across the given role code arrays."""
+    result = np.zeros(n_entities, dtype=np.int64)
+    for codes in code_arrays:
+        result += np.bincount(codes, minlength=n_entities).astype(np.int64)
+    return result
+
+
+def ratio_deviation_warnings(record_split: IntArray, spec: SplitSpec) -> list[str]:
+    """Warn when achieved record ratios deviate materially from the request.
+
+    Used by regimes (entity-disjoint, joint) where the requested ratios are targets over
+    an entity partition and cannot be met exactly at the record level.
+    """
+    counts = np.array(
+        [np.count_nonzero(record_split == i) for i in range(len(spec.ratios))], dtype=np.float64
+    )
+    total = counts.sum()
+    if total == 0:
+        return []
+    warnings: list[str] = []
+    for i, name in enumerate(spec.split_names):
+        achieved = counts[i] / total
+        if abs(achieved - spec.ratios[i]) > _RATIO_DEVIATION_WARN:
+            warnings.append(
+                f"split {name!r} record ratio {achieved:.2f} deviates from requested "
+                f"{spec.ratios[i]:.2f} (inherent to entity-disjoint splitting)"
+            )
     return warnings
 
 
