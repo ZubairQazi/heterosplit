@@ -11,6 +11,7 @@ optional extra (``pip install heterosplit[pyg]``).
 
 from __future__ import annotations
 
+from .api import split_records
 from .errors import (
     HeteroSplitError,
     InfeasibleSplitError,
@@ -19,6 +20,7 @@ from .errors import (
     SpecError,
 )
 from .records import PredictionRecords
+from .result import SplitResult
 from .schema import EdgeType, EntityRole, RelationMeta, RoleKind, TaskSchema
 from .spec import Regime, SplitSpec
 from .synthetic import SyntheticDataset, make_synthetic_dataset
@@ -37,9 +39,11 @@ __all__ = [
     "RoleKind",
     "SchemaError",
     "SpecError",
+    "SplitResult",
     "SplitSpec",
     "SyntheticDataset",
     "TaskSchema",
     "__version__",
     "make_synthetic_dataset",
+    "split_records",
 ]
