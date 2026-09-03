@@ -9,12 +9,16 @@ top in later modules; keeping the core small makes the invariants easy to state.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
 
 from .records import PredictionRecords
 from .spec import SplitSpec
+
+if TYPE_CHECKING:
+    from .manifest import Manifest
 
 __all__ = ["EXCLUDED", "SplitResult"]
 
@@ -101,3 +105,16 @@ class SplitResult:
         return bool(np.all(self.record_split >= EXCLUDED)) and self.record_split.shape == (
             self.records.n_records,
         )
+
+    @property
+    def manifest(self) -> Manifest:
+        """A deterministic :class:`~heterosplit.manifest.Manifest` for this result."""
+        from .manifest import Manifest
+
+        return Manifest.from_result(self)
+
+    def build_manifest(self, **kwargs: Any) -> Manifest:
+        """Build a manifest, optionally attaching ``audit``/``distributions``/``measurements``."""
+        from .manifest import Manifest
+
+        return Manifest.from_result(self, **kwargs)

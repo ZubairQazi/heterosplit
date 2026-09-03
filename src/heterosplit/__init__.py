@@ -11,6 +11,10 @@ optional extra (``pip install heterosplit[pyg]``).
 
 from __future__ import annotations
 
+# Defined before the sub-module imports below: manifest.py reads it via
+# ``from . import __version__`` during package initialization.
+__version__ = "0.0.1.dev0"
+
 from .api import split_records
 from .errors import (
     HeteroSplitError,
@@ -19,13 +23,12 @@ from .errors import (
     SchemaError,
     SpecError,
 )
+from .manifest import Manifest
 from .records import PredictionRecords
 from .result import SplitResult
 from .schema import EdgeType, EntityRole, RelationMeta, RoleKind, TaskSchema
 from .spec import Regime, SplitSpec
 from .synthetic import SyntheticDataset, make_synthetic_dataset
-
-__version__ = "0.0.1.dev0"
 
 __all__ = [
     "EdgeType",
@@ -33,6 +36,7 @@ __all__ = [
     "HeteroSplitError",
     "InfeasibleSplitError",
     "LeakageError",
+    "Manifest",
     "PredictionRecords",
     "Regime",
     "RelationMeta",
