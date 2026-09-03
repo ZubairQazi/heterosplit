@@ -21,6 +21,7 @@ from .errors import (
 from .records import PredictionRecords
 from .schema import EdgeType, EntityRole, RelationMeta, RoleKind, TaskSchema
 from .spec import Regime, SplitSpec
+from .synthetic import SyntheticDataset, make_synthetic_dataset
 
 __version__ = "0.0.1.dev0"
 
@@ -37,6 +38,8 @@ __all__ = [
     "SchemaError",
     "SpecError",
     "SplitSpec",
+    "SyntheticDataset",
     "TaskSchema",
     "__version__",
+    "make_synthetic_dataset",
 ]
