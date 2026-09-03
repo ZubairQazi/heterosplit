@@ -106,6 +106,18 @@ class SplitResult:
             self.records.n_records,
         )
 
+    def supervision_edge_index(self, split: str) -> IntArray:
+        """The ``(2, E)`` source/destination code edge index of ``split``'s records."""
+        from .message_passing import supervision_edge_index
+
+        return supervision_edge_index(self, split)
+
+    def message_passing_edge_index(self, **kwargs: Any) -> IntArray:
+        """Leakage-safe training message-passing edge index (see :mod:`message_passing`)."""
+        from .message_passing import message_passing_edge_index
+
+        return message_passing_edge_index(self, **kwargs)
+
     @property
     def manifest(self) -> Manifest:
         """A deterministic :class:`~heterosplit.manifest.Manifest` for this result."""

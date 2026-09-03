@@ -67,7 +67,7 @@ class JointColdStartSplitter(Splitter):
 
 def _axis_tiers(records: PredictionRecords, spec: SplitSpec) -> list[IntArray]:
     """One per-record tier array per active holdout axis."""
-    assert spec.holdout is not None  # guaranteed by spec validation  # noqa: S101
+    assert spec.holdout is not None  # guaranteed by spec validation
     active = {t: m for t, m in spec.holdout.items() if m != "none"}
     labels = _label_held_out_types(records, spec, sorted(active))
 
