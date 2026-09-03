@@ -11,7 +11,7 @@ import numpy.typing as npt
 from ..records import PredictionRecords
 from ..result import SplitResult
 from ..spec import Regime, SplitSpec
-from .assignment import assign_groups
+from .assignment import assign_groups, refine_assignment
 
 __all__ = [
     "Splitter",
@@ -22,6 +22,10 @@ __all__ = [
 ]
 
 IntArray = npt.NDArray[np.int64]
+
+#: Skip the (super-linear) local-search refinement above this many groups so large
+#: benchmark runs stay fast; the greedy assignment alone is already well-balanced.
+REFINE_MAX_GROUPS = 100_000
 
 
 class Splitter(ABC):
@@ -116,11 +120,24 @@ def split_by_groups(
     collect warnings. ``group_ids`` must be dense (``0..n_groups-1``).
     """
     warnings: list[str] = list(extra_warnings or [])
+    n_splits = len(spec.ratios)
+    if 0 < n_groups < n_splits:
+        warnings.append(
+            f"only {n_groups} group(s) for {n_splits} splits; some splits must be empty"
+        )
     strata, strata_warnings = resolve_strata(records, spec, group_ids, n_groups)
     warnings.extend(strata_warnings)
 
     sizes = np.bincount(group_ids, minlength=n_groups).astype(np.int64)
     group_split = assign_groups(sizes, spec.ratios, spec.seed, strata=strata)
+
+    # When the user has not requested hard stratification, softly balance the label
+    # distribution across splits via bounded, size-preserving local search.
+    if strata is None and records.labels is not None and 0 < n_groups <= REFINE_MAX_GROUPS:
+        group_value_counts = np.zeros((n_groups, records.n_labels), dtype=np.float64)
+        np.add.at(group_value_counts, (group_ids, records.labels), 1.0)
+        group_split = refine_assignment(group_split, sizes, group_value_counts, spec.ratios)
+
     record_split = group_split[group_ids] if n_groups else np.empty(0, dtype=np.int64)
 
     warnings.extend(empty_split_warnings(record_split, spec.split_names))
