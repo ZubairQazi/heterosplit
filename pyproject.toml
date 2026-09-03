@@ -39,6 +39,9 @@ dynamic = ["version"]
 # PyTorch Geometric integration is optional; the correctness core is pure Python + NumPy.
 pyg = ["torch>=2.1", "torch-geometric>=2.5"]
 
+[project.scripts]
+heterosplit = "heterosplit.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/zubairqazi/heterosplit"
 Repository = "https://github.com/zubairqazi/heterosplit"

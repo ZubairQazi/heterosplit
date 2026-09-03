@@ -10,7 +10,6 @@ from heterosplit import (
     LeakageError,
     Regime,
     SplitSpec,
-    TaskSchema,
     audit_split,
     split_records,
 )

@@ -16,7 +16,7 @@ from enum import Enum
 from typing import Any
 
 from .errors import SpecError
-from .schema import EdgeType, EntityRole, RelationMeta, TaskSchema
+from .schema import EdgeType, EntityRole, RelationMeta, RoleKind, TaskSchema
 
 __all__ = ["Regime", "SplitSpec"]
 
@@ -229,3 +229,33 @@ class SplitSpec:
             "undirected_pairs": self.undirected_pairs,
             "relations": relations,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> SplitSpec:
+        """Rebuild a spec from :meth:`normalize` output (round-trip; ignores extra keys)."""
+        try:
+            roles = {
+                name: EntityRole(RoleKind(role["kind"]), role["entity_type"])
+                for name, role in data["roles"].items()
+            }
+            relations = tuple(
+                RelationMeta(
+                    tuple(rel["edge_type"]),
+                    symmetric=rel.get("symmetric", False),
+                    reverse_of=tuple(rel["reverse_of"]) if rel.get("reverse_of") else None,
+                )
+                for rel in data.get("relations", [])
+            )
+            return cls(
+                supervision_edge=tuple(data["supervision_edge"]),
+                roles=roles,
+                regime=data.get("regime", "random"),
+                ratios=tuple(data.get("ratios", (0.8, 0.1, 0.1))),
+                seed=int(data.get("seed", 0)),
+                holdout=data.get("holdout"),
+                stratify_by=data.get("stratify_by"),
+                undirected_pairs=bool(data.get("undirected_pairs", False)),
+                relations=relations,
+            )
+        except (KeyError, TypeError) as exc:
+            raise SpecError(f"invalid spec dict: {exc}") from exc
