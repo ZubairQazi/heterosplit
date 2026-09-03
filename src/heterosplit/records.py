@@ -48,12 +48,15 @@ class Codebook:
     def encode(self, raw: npt.ArrayLike) -> IntArray:
         """Map raw values to codes, raising :class:`SchemaError` on unknown values."""
         raw_arr = np.asarray(raw)
-        codes = np.searchsorted(self.values, raw_arr).astype(np.int64)
-        # searchsorted can return len(values) for out-of-range values; clip before
-        # the membership check to keep the fancy-index in bounds.
-        in_bounds = codes < len(self)
-        present = np.zeros(raw_arr.shape, dtype=bool)
-        present[in_bounds] = self.values[codes[in_bounds]] == raw_arr[in_bounds]
+        try:
+            codes = np.searchsorted(self.values, raw_arr).astype(np.int64)
+            # searchsorted can return len(values) for out-of-range values; clip before
+            # the membership check to keep the fancy-index in bounds.
+            in_bounds = codes < len(self)
+            present = np.zeros(raw_arr.shape, dtype=bool)
+            present[in_bounds] = self.values[codes[in_bounds]] == raw_arr[in_bounds]
+        except TypeError as exc:
+            raise SchemaError(f"cannot encode values against this codebook: {exc}") from exc
         if not bool(np.all(present)):
             missing = np.asarray(raw_arr)[~present]
             raise SchemaError(
@@ -73,7 +76,14 @@ class Codebook:
             raise ValueError("Codebook.build requires at least one array")
         lengths = [a.shape[0] for a in materialized]
         concat = np.concatenate(materialized) if len(materialized) > 1 else materialized[0]
-        values, inverse = np.unique(concat, return_inverse=True)
+        if concat.dtype.kind == "f" and bool(np.isnan(concat).any()):
+            raise SchemaError("NaN values are not supported as entity ids or labels")
+        try:
+            values, inverse = np.unique(concat, return_inverse=True)
+        except TypeError as exc:
+            raise SchemaError(
+                f"values are not orderable (mixed incomparable types?): {exc}"
+            ) from exc
         inverse = np.asarray(inverse, dtype=np.int64).reshape(-1)
         codes: list[IntArray] = []
         offset = 0

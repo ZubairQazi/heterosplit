@@ -13,6 +13,7 @@ from ._common import (
     held_out_indices,
     native,
     pair_set,
+    values_in_multiple_splits,
 )
 from .contract import Contract
 from .report import AuditFinding, Severity
@@ -26,11 +27,9 @@ __all__ = [
 ]
 
 
-def _role_overlap_codes(result: SplitResult, role_name: str) -> set[int]:
+def _per_split_role_codes(result: SplitResult, role_name: str) -> dict[str, set[int]]:
     codes = result.records.codes(role_name)
-    train = set(codes[result.indices("train")].tolist())
-    held = set(codes[held_out_indices(result)].tolist())
-    return train & held
+    return {split: set(codes[result.indices(split)].tolist()) for split in result.split_names}
 
 
 def audit_endpoint_overlap(result: SplitResult, contract: Contract) -> list[AuditFinding]:
@@ -49,15 +48,13 @@ def audit_endpoint_overlap(result: SplitResult, contract: Contract) -> list[Audi
 
 
 def _role_finding(result: SplitResult, role_name: str, check: str) -> AuditFinding:
-    overlap = sorted(_role_overlap_codes(result, role_name))
+    overlap = sorted(values_in_multiple_splits(_per_split_role_codes(result, role_name)))
     examples = decode_role_examples(result.records, role_name, overlap)
     return AuditFinding(
         check=check,
         severity=Severity.ERROR,
         count=len(overlap),
-        message=(
-            f"{len(overlap)} {role_name!r} entities appear in both training and a held-out split"
-        ),
+        message=f"{len(overlap)} {role_name!r} entities appear in more than one split",
         examples=examples,
     )
 
@@ -70,12 +67,14 @@ def _endpoint_type_findings(result: SplitResult) -> list[AuditFinding]:
 
     findings: list[AuditFinding] = []
     for entity_type, role_names in sorted(roles_by_type.items()):
-        train, held = set(), set()
-        for role_name in role_names:
-            codes = result.records.codes(role_name)
-            train |= set(codes[result.indices("train")].tolist())
-            held |= set(codes[held_out_indices(result)].tolist())
-        overlap = sorted(train & held)
+        per_split: dict[str, set[int]] = {}
+        for split in result.split_names:
+            idx = result.indices(split)
+            codes: set[int] = set()
+            for role_name in role_names:
+                codes |= set(result.records.codes(role_name)[idx].tolist())
+            per_split[split] = codes
+        overlap = sorted(values_in_multiple_splits(per_split))
         book = result.records.codebooks[entity_type]
         examples = (
             [native(v) for v in book.decode(np.array(overlap[:MAX_EXAMPLES]))] if overlap else []
@@ -85,10 +84,7 @@ def _endpoint_type_findings(result: SplitResult) -> list[AuditFinding]:
                 check=f"both_endpoint_overlap:{entity_type}",
                 severity=Severity.ERROR,
                 count=len(overlap),
-                message=(
-                    f"{len(overlap)} {entity_type!r} entities appear in both training and a "
-                    "held-out split"
-                ),
+                message=f"{len(overlap)} {entity_type!r} entities appear in more than one split",
                 examples=examples,
             )
         )
@@ -96,42 +92,38 @@ def _endpoint_type_findings(result: SplitResult) -> list[AuditFinding]:
 
 
 def audit_pair_overlap(result: SplitResult, contract: Contract) -> list[AuditFinding]:
-    """Pair overlap between train and held-out, including reversed unordered pairs."""
+    """Pair overlap across splits (any pair), including reversed pairs for self-relations.
+
+    Reversed-pair overlap is only meaningful when both endpoints share a code space (a
+    self-relation); for a *directed* relation ``(A, B)`` and ``(B, A)`` are distinct
+    edges, so it is reported as a warning rather than a violation — set
+    ``undirected_pairs=True`` to make reversed pairs a hard error.
+    """
+    if not contract.pair_disjoint:
+        return []
     records = result.records
     src, dst = records.source_codes, records.destination_codes
-    train_idx = result.indices("train")
-    held_idx = held_out_indices(result)
 
-    ordered_train = pair_set(src, dst, train_idx, undirected=False)
-    ordered_held = pair_set(src, dst, held_idx, undirected=False)
-    ordered_overlap = ordered_train & ordered_held
+    def per_split(*, undirected: bool) -> dict[str, set[tuple[int, int]]]:
+        return {
+            s: pair_set(src, dst, result.indices(s), undirected=undirected)
+            for s in result.split_names
+        }
 
-    canonical_train = pair_set(src, dst, train_idx, undirected=True)
-    canonical_held = pair_set(src, dst, held_idx, undirected=True)
-    canonical_overlap = canonical_train & canonical_held
+    if result.spec.undirected_pairs:
+        overlap = values_in_multiple_splits(per_split(undirected=True))
+        return [_pair_finding(records, "pair_overlap", Severity.ERROR, overlap, undirected=True)]
 
-    findings: list[AuditFinding] = []
-    if contract.pair_disjoint and result.spec.undirected_pairs:
-        findings.append(
-            _pair_finding(
-                records, "pair_overlap", Severity.ERROR, canonical_overlap, undirected=True
-            )
-        )
-    elif contract.pair_disjoint:
-        findings.append(
-            _pair_finding(
-                records, "pair_overlap", Severity.ERROR, ordered_overlap, undirected=False
-            )
-        )
-        # Canonical overlaps not explained by an exact ordered match => reversed-pair leak.
+    ordered_overlap = values_in_multiple_splits(per_split(undirected=False))
+    findings = [
+        _pair_finding(records, "pair_overlap", Severity.ERROR, ordered_overlap, undirected=False)
+    ]
+    if records.schema.is_self_relation:
+        canonical_overlap = values_in_multiple_splits(per_split(undirected=True))
         reversed_leak = canonical_overlap - {tuple(sorted(p)) for p in ordered_overlap}
         findings.append(
             _pair_finding(
-                records,
-                "reversed_pair_overlap",
-                Severity.WARNING,
-                reversed_leak,
-                undirected=True,
+                records, "reversed_pair_overlap", Severity.WARNING, reversed_leak, undirected=True
             )
         )
     return findings

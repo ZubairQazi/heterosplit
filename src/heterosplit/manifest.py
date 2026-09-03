@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -36,16 +37,26 @@ def _sha256_hex(data: bytes) -> str:
 
 
 def _values_bytes(arr: npt.NDArray[np.generic]) -> bytes:
-    """Endianness-stable byte encoding of a value array for hashing."""
+    """Endianness-stable, collision-resistant byte encoding of a value array.
+
+    The dtype string and element count are included so int/str/datetime arrays with the
+    same textual form do not collide, and string elements are length-prefixed so an
+    embedded NUL can never make two different arrays hash the same.
+    """
     a = np.asarray(arr)
+    out = bytearray(str(a.dtype.str).encode("ascii") + b"|" + struct.pack("<Q", int(a.shape[0])))
     kind = a.dtype.kind
     if kind in "iu":
-        return b"i" + a.astype("<i8").tobytes()
-    if kind == "f":
-        return b"f" + a.astype("<f8").tobytes()
-    if kind == "b":
-        return b"b" + a.astype(np.int8).tobytes()
-    return b"s" + "\x00".join(str(x) for x in a.tolist()).encode("utf-8")
+        out += a.astype("<i8").tobytes()
+    elif kind == "f":
+        out += a.astype("<f8").tobytes()
+    elif kind == "b":
+        out += a.astype(np.int8).tobytes()
+    else:
+        for value in a.tolist():
+            encoded = str(value).encode("utf-8")
+            out += struct.pack("<Q", len(encoded)) + encoded
+    return bytes(out)
 
 
 def fingerprint_records(records: PredictionRecords) -> str:

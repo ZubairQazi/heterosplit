@@ -73,9 +73,13 @@ def message_passing_edge_index(
             (default: training only).
         add_reverse: Add both orderings of each edge. Defaults to the spec's
             ``undirected_pairs`` (undirected relations need both directions to propagate).
-        remove_heldout: Drop any message-passing edge whose *canonical* pair coincides
-            with a held-out (non-``mp_splits``) supervision edge, catching reverse-form
-            leakage. This is the core message-passing invariant and is on by default.
+        remove_heldout: Drop any message-passing edge whose pair coincides with a
+            held-out (non-``mp_splits``) supervision edge — and, for self-relations, its
+            reverse. This is the core message-passing invariant and is on by default.
+            Note that any split you place in ``mp_splits`` is, by definition, not
+            held-out and so is *not* removed: only pass a held-out split here if you
+            deliberately want its edges in the graph (e.g. ``("train", "val")`` for the
+            test-time graph).
 
     Returns:
         A deduplicated ``(2, M)`` edge index of entity codes.
@@ -83,6 +87,10 @@ def message_passing_edge_index(
     records = result.records
     src, dst = records.source_codes, records.destination_codes
     undirected = result.spec.undirected_pairs
+    # Reverse-form collapsing is only valid for a self-relation, where both endpoints
+    # share a code space. For a bipartite relation source-code k and destination-code k
+    # are different entities, so (min,max) across the two codebooks must NOT be used.
+    reverse_aware = records.schema.is_self_relation
     if add_reverse is None:
         add_reverse = undirected
 
@@ -93,8 +101,10 @@ def message_passing_edge_index(
         heldout_splits = tuple(s for s in result.split_names if s not in mp_splits)
         heldout_idx = _indices_for(result, heldout_splits)
         if heldout_idx.size and mp_idx.size:
-            h_lo, h_hi = canonicalize_pairs(src[heldout_idx], dst[heldout_idx], undirected=True)
-            m_lo, m_hi = canonicalize_pairs(mp_src, mp_dst, undirected=True)
+            h_lo, h_hi = canonicalize_pairs(
+                src[heldout_idx], dst[heldout_idx], undirected=reverse_aware
+            )
+            m_lo, m_hi = canonicalize_pairs(mp_src, mp_dst, undirected=reverse_aware)
             held_rows = np.stack([h_lo, h_hi], axis=1)
             mp_rows = np.stack([m_lo, m_hi], axis=1)
             keep = ~_rows_in(mp_rows, held_rows)
@@ -105,10 +115,10 @@ def message_passing_edge_index(
         pairs = (
             np.unique(np.stack([lo, hi], axis=1), axis=0) if lo.size else np.empty((0, 2), np.int64)
         )
-        e_src, e_dst = pairs[:, 0], pairs[:, 1]
+        edge_index = np.stack([pairs[:, 0], pairs[:, 1]]).astype(np.int64)
         if add_reverse:
-            return np.stack([np.concatenate([e_src, e_dst]), np.concatenate([e_dst, e_src])])
-        return np.stack([e_src, e_dst]).astype(np.int64)
+            edge_index = np.concatenate([edge_index, edge_index[::-1]], axis=1)
+        return _unique_columns(edge_index)
 
     edge_index = np.stack([mp_src, mp_dst]).astype(np.int64)
     if add_reverse:

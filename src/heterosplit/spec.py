@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+import numpy as np
+
 from .errors import SpecError
 from .schema import EdgeType, EntityRole, RelationMeta, RoleKind, TaskSchema
 
@@ -117,7 +119,12 @@ class SplitSpec:
         return values
 
     def _validate_seed(self) -> None:
-        if not isinstance(self.seed, int) or isinstance(self.seed, bool) or self.seed < 0:
+        # Accept Python and numpy integers; reject bool and negatives. Coerce to a
+        # plain int so the manifest serializes cleanly.
+        if isinstance(self.seed, bool) or not isinstance(self.seed, int | np.integer):
+            raise SpecError(f"seed must be a non-negative int, got {self.seed!r}")
+        self.seed = int(self.seed)
+        if self.seed < 0:
             raise SpecError(f"seed must be a non-negative int, got {self.seed!r}")
 
     def _validate_undirected(self) -> None:
