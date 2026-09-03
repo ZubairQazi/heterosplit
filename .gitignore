@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# uv
+# (uv.lock IS committed; the cache dir is not)
+.uv/
+
+# Test / coverage / typing caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Benchmark / example artifacts
+*.manifest.json
+benchmarks/results/
+examples/output/
+
+# OS / editor cruft
+.DS_Store
+*.swp
+.idea/
+.vscode/
