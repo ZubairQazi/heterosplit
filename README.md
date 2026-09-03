@@ -47,7 +47,7 @@ pip install "heterosplit[pyg]"
 This project uses [`uv`](https://docs.astral.sh/uv/):
 
 ```bash
-git clone https://github.com/zubairqazi/heterosplit
+git clone https://github.com/ZubairQazi/heterosplit
 cd heterosplit
 uv sync                 # creates .venv and installs the dev toolchain
 uv run pytest           # run the test suite

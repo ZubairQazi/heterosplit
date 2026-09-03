@@ -43,9 +43,9 @@ pyg = ["torch>=2.1", "torch-geometric>=2.5"]
 heterosplit = "heterosplit.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/zubairqazi/heterosplit"
-Repository = "https://github.com/zubairqazi/heterosplit"
-Issues = "https://github.com/zubairqazi/heterosplit/issues"
+Homepage = "https://github.com/ZubairQazi/heterosplit"
+Repository = "https://github.com/ZubairQazi/heterosplit"
+Issues = "https://github.com/ZubairQazi/heterosplit/issues"
 
 [tool.hatch.version]
 path = "src/heterosplit/__init__.py"
