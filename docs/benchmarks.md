@@ -58,3 +58,47 @@ machine; the relative story is the point.
 regimes). HeteroSplit's `random` regime is the comparable operation; the cold-start
 regimes and the leakage auditor have no direct PyG equivalent, which is the point of the
 library.
+
+## Real data: DrugComb
+
+Run on the full DrugComb v1.5 summary table (`summary_v_1_5.csv`, CC-BY-4.0) via
+`heterosplit.datasets.drugcomb.load_drugcomb_csv`. After dropping mono-therapy rows
+(`drug_col = NULL`) and rows missing a cell line or synergy score, the corpus is:
+
+- **739,652** drug-combination records, **4,268** drugs, **288** cell lines
+- label balance (synergy_loewe > 0): 224,847 synergistic / 514,805 antagonistic
+
+Splitting the full corpus with `undirected_pairs=True`, `ratios=(0.8, 0.1, 0.1)`, seed 42
+(one core, Python 3.12):
+
+| regime | time (s) | peak (MB) | train | val | test | excluded | test % | leakage |
+|---|---:|---:|---:|---:|---:|---:|---:|:--:|
+| random | 0.76 | 67 | 591,722 | 73,965 | 73,965 | 0 | 10.0% | clean |
+| pair_cold_start | 0.67 | 67 | 591,722 | 73,965 | 73,965 | 0 | 10.0% | clean |
+| either_cold_start | 0.03 | 18 | 506,619 | 99,784 | 133,249 | 0 | 18.0% | clean |
+| both_cold_start | 0.03 | 24 | 506,619 | 16,629 | 14,681 | 201,723 | 2.7% | clean |
+| joint_cold_start | 0.03 | 36 | 393,424 | 6,444 | 10,871 | 328,913 | 2.6% | clean |
+
+Every split is audited leakage-free. The entity-partition regimes make the quadratic
+effect concrete: `both`/`joint` exclude 200k–330k "bridge" records and shrink the test set
+to ~2.7%, which is *reported*, not hidden.
+
+### The split regime changes the answer
+
+Training the small GraphSAGE link predictor from `examples/train_link_prediction.py` on a
+200k-row DrugComb subset (98,671 records, 3,995 drugs), scoring held-out drug pairs against
+negatives drawn from the same node pool:
+
+| regime | test edges | test AUC | test AP |
+|---|---:|---:|---:|
+| random (transductive) | 9,867 | **0.839** | 0.894 |
+| either_cold_start | 17,960 | **0.267** | 0.375 |
+| both_cold_start | 1,774 | 0.472 | 0.500 |
+
+A model that looks strong under a random split (AUC 0.84) is **worse than chance on genuinely
+unseen drugs** (either-cold-start AUC 0.27) — the overestimation HeteroSplit exists to
+prevent. Numbers vary with seed/subset; reproduce with:
+
+```bash
+HETEROSPLIT_DRUGCOMB_CSV=data/summary_v_1_5.csv uv run --extra pyg python examples/train_link_prediction.py
+```

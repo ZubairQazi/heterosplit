@@ -28,6 +28,11 @@ can still leak information through:
 HeteroSplit makes the split *contract* explicit, enforces it, and produces evidence
 (a serializable **manifest** + **audit report**) that the contract holds.
 
+**Why it matters (real DrugComb):** a small GraphSAGE link predictor scores **AUC 0.84**
+under a random split but **0.27** on genuinely unseen drugs (either-cold-start) — random
+splitting massively overestimates cold-start performance. See
+[benchmarks](docs/benchmarks.md#real-data-drugcomb).
+
 ## Install
 
 The correctness core is pure Python + NumPy:
