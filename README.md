@@ -2,6 +2,11 @@
 
 **Leakage-safe entity-disjoint splits and audits for heterogeneous link-prediction datasets.**
 
+[![CI](https://github.com/ZubairQazi/heterosplit/actions/workflows/ci.yml/badge.svg)](https://github.com/ZubairQazi/heterosplit/actions/workflows/ci.yml)
+![coverage](https://img.shields.io/badge/coverage-94%25-brightgreen)
+![python](https://img.shields.io/badge/python-3.10--3.13-blue)
+[![license: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 HeteroSplit constructs, validates, and *reports* cold-start / inductive splits for
 heterogeneous link-prediction tasks (drug–drug–cell-line synergy, drug–target
 interaction, recommendation, knowledge graphs). It is designed to **complement**

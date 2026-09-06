@@ -14,10 +14,10 @@ jobs:
     name: lint & type-check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -43,10 +43,10 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -57,11 +57,34 @@ jobs:
         run: uv sync --python ${{ matrix.python-version }}
 
       - name: Test
-        run: uv run pytest --cov --cov-report=term-missing --cov-report=xml
+        run: uv run pytest
+
+  coverage:
+    name: coverage (with pyg extra)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      # Install the [pyg] extra so the PyG adapter + training example run and are
+      # measured — the coverage gate then reflects the whole library, not just the core.
+      - name: Sync (core + dev + pyg)
+        run: uv sync --python 3.12 --extra pyg
+
+      - name: Test with coverage (fail under 90%)
+        run: >
+          uv run --extra pyg pytest
+          --cov --cov-report=term-missing --cov-report=xml --cov-fail-under=90
 
       - name: Upload coverage
-        if: matrix.python-version == '3.12'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-xml
           path: coverage.xml
