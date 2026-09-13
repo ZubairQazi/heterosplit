@@ -13,10 +13,20 @@ from .drugcomb import (
     load_drugcomb_csv,
     records_from_drugcomb,
 )
+from .movielens import (
+    MOVIELENS_SMALL_URL,
+    download_movielens,
+    load_movielens_csv,
+    records_from_movielens,
+)
 
 __all__ = [
     "DRUGCOMB_SUMMARY_URL",
+    "MOVIELENS_SMALL_URL",
     "download_drugcomb_summary",
+    "download_movielens",
     "load_drugcomb_csv",
+    "load_movielens_csv",
     "records_from_drugcomb",
+    "records_from_movielens",
 ]
