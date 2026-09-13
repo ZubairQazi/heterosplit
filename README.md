@@ -34,9 +34,11 @@ can still leak information through:
 HeteroSplit makes the split *contract* explicit, enforces it, and produces evidence
 (a serializable **manifest** + **audit report**) that the contract holds.
 
-**Why it matters (real DrugComb):** a small GraphSAGE link predictor scores **AUC 0.84**
-under a random split but **0.27** on genuinely unseen drugs (either-cold-start) — random
-splitting massively overestimates cold-start performance. See
+**Why it matters (real data).** Across DrugComb and MovieLens, a GraphSAGE link predictor
+beats a graph-free baseline by **+0.25–0.32 AUC** under a random split — but that advantage
+**collapses or reverses** on genuinely unseen entities (cold-start). So a random split can
+overstate cold-start performance by 0.2–0.5 AUC **and invert model rankings** (you'd pick
+the wrong model). See the [regime study](docs/regime-study.md) and
 [benchmarks](docs/benchmarks.md#real-data-drugcomb).
 
 ## Install
@@ -126,6 +128,7 @@ if you already have one.
 
 - [Architecture / design](docs/architecture.md)
 - [Benchmarks & methodology](docs/benchmarks.md)
+- [Regime study: does the split change model rankings?](docs/regime-study.md)
 - [Positioning & feature matrix](docs/positioning.md) (vs PyG `RandomLinkSplit`)
 
 ## Split taxonomy (v1 target)
