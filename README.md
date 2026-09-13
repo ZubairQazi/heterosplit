@@ -126,6 +126,7 @@ if you already have one.
 
 - [Architecture / design](docs/architecture.md)
 - [Benchmarks & methodology](docs/benchmarks.md)
+- [Positioning & feature matrix](docs/positioning.md) (vs PyG `RandomLinkSplit`)
 
 ## Split taxonomy (v1 target)
 
