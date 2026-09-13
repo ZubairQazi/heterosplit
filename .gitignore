@@ -33,6 +33,9 @@ htmlcov/
 benchmarks/results/
 examples/output/
 
+# Downloaded datasets (never commit large corpora)
+data/
+
 # OS / editor cruft
 .DS_Store
 *.swp
