@@ -118,7 +118,12 @@ def load_movielens_csv(
 
 
 def download_movielens(dest_dir: str | Path, *, url: str = MOVIELENS_SMALL_URL) -> Path:
-    """Download and extract the MovieLens small release; return the ratings.csv path."""
+    """Download and extract the MovieLens small release; return the ratings.csv path.
+
+    Verifies TLS. If GroupLens's server certificate has lapsed (it occasionally does),
+    download ``ml-latest-small.zip`` manually and point :func:`load_movielens_csv` at the
+    extracted ``ratings.csv`` instead.
+    """
     import io
     import urllib.request
     import zipfile

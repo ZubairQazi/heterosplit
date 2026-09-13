@@ -77,6 +77,7 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF", "PERF", "PIE"]
 "tests/*" = ["N802", "N803", "N806"]
 # `import torch.nn.functional as F` is the canonical PyTorch idiom.
 "examples/*" = ["N812"]
+"experiments/*" = ["N812"]
 
 [tool.mypy]
 # Type-check against 3.12 semantics: numpy 2.x ships PEP 695 stubs that mypy only
