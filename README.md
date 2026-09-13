@@ -2,6 +2,7 @@
 
 **Leakage-safe entity-disjoint splits and audits for heterogeneous link-prediction datasets.**
 
+[![PyPI](https://img.shields.io/pypi/v/heterosplit)](https://pypi.org/project/heterosplit/)
 [![CI](https://github.com/ZubairQazi/heterosplit/actions/workflows/ci.yml/badge.svg)](https://github.com/ZubairQazi/heterosplit/actions/workflows/ci.yml)
 ![coverage](https://img.shields.io/badge/coverage-94%25-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10--3.13-blue)
