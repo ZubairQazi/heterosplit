@@ -6,7 +6,7 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-09-06
+## [0.1.0] - 2026-09-12
 
 First public release: a feature-complete v1 of the correctness core, auditor, and
 integrations.
